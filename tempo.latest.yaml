@@ -1,0 +1,67 @@
+apiVersion: tempo.grafana.com/v1alpha1
+kind: TempoMonolithic
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"tempo.grafana.com/v1alpha1","kind":"TempoMonolithic","metadata":{"annotations":{"tempo.grafana.com/cert-hash-tempo-tempo-mtls":"b3179d8527365d5bb3dce2ab77859aafcd48b25a0b1723493fe48b6df5ed826f"},"creationTimestamp":"2026-01-30T01:40:32Z","finalizers":["tempo.grafana.com/finalizer"],"generation":8,"name":"tempo","namespace":"tracing-system","resourceVersion":"1492382","uid":"8b37c5d5-7784-4582-8ee4-abbfe3938235"},"spec":{"extraConfig":{"tempo":{"metrics_generator":{"processor":{"service_graphs":{}},"storage":{"path":"/var/tempo/wal","remote_write":[{"send_exemplars":true,"url":"http://prometheus-operated.tracing-system.svc:9090/api/v1/write"}]}},"overrides":{"defaults":{"metrics_generator":{"processors":["service-graphs","span-metrics"]}}}}},"ingestion":{},"storage":{"traces":{"backend":"s3","s3":{"secret":"tempo-objstore"}}},"timeout":"0s"},"status":{"components":{"tempo":{"Pending":["tempo-tempo"]}},"conditions":[{"lastTransitionTime":"2026-02-01T19:01:11Z","message":"Some Tempo components are pending on dependencies","reason":"PendingComponents","status":"True","type":"Pending"},{"lastTransitionTime":"2026-01-30T01:40:32Z","message":"","reason":"InvalidStorageConfig","status":"False","type":"ConfigurationError"},{"lastTransitionTime":"2026-01-30T01:40:32Z","message":"","reason":"FailedComponents","status":"False","type":"Failed"},{"lastTransitionTime":"2026-02-01T19:01:11Z","message":"All components are operational","reason":"Ready","status":"False","type":"Ready"}],"operatorVersion":"0.19.0","tempoVersion":"2.9.0"}}
+    tempo.grafana.com/cert-hash-tempo-tempo-mtls: b3179d8527365d5bb3dce2ab77859aafcd48b25a0b1723493fe48b6df5ed826f
+  creationTimestamp: "2026-01-30T01:40:32Z"
+  finalizers:
+  - tempo.grafana.com/finalizer
+  generation: 9
+  name: tempo
+  namespace: tracing-system
+  resourceVersion: "1493571"
+  uid: 8b37c5d5-7784-4582-8ee4-abbfe3938235
+spec:
+  extraConfig:
+    tempo:
+      metrics_generator:
+        processor:
+          service_graphs: {}
+        storage:
+          path: /var/tempo/wal
+          remote_write:
+          - send_exemplars: true
+            url: http://prometheus.istio-system.svc.cluster.local:9090/api/v1/write
+      overrides:
+        defaults:
+          metrics_generator:
+            processors:
+            - service-graphs
+            - span-metrics
+  ingestion: {}
+  storage:
+    traces:
+      backend: s3
+      s3:
+        secret: tempo-objstore
+  timeout: 0s
+status:
+  components:
+    tempo:
+      Running:
+      - tempo-tempo-0
+  conditions:
+  - lastTransitionTime: "2026-02-01T19:19:10Z"
+    message: Some Tempo components are pending on dependencies
+    reason: PendingComponents
+    status: "False"
+    type: Pending
+  - lastTransitionTime: "2026-01-30T01:40:32Z"
+    message: ""
+    reason: InvalidStorageConfig
+    status: "False"
+    type: ConfigurationError
+  - lastTransitionTime: "2026-01-30T01:40:32Z"
+    message: ""
+    reason: FailedComponents
+    status: "False"
+    type: Failed
+  - lastTransitionTime: "2026-02-01T19:19:10Z"
+    message: All components are operational
+    reason: Ready
+    status: "True"
+    type: Ready
+  operatorVersion: 0.19.0
+  tempoVersion: 2.9.0
