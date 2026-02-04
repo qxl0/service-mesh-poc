@@ -1,0 +1,86 @@
+%%{init: {"theme":"base","flowchart":{"curve":"basis"},"themeVariables":{
+  "fontFamily":"Inter, ui-sans-serif, system-ui",
+  "primaryColor":"#e0f2fe",
+  "primaryTextColor":"#0f172a",
+  "primaryBorderColor":"#0284c7",
+  "lineColor":"#334155",
+  "tertiaryColor":"#f8fafc"
+}}}%%
+
+flowchart LR
+
+%% ================= BOOKINFO =================
+subgraph BOOKINFO["bookinfo namespace (data plane)"]
+direction LR
+classDef bookinfo fill:#dbeafe,stroke:#2563eb,stroke-width:2px;
+
+sleep["sleep"]
+sleepEnvoy["envoy"]
+
+product["productpage"]
+productEnvoy["envoy"]
+
+details["details"]
+detailsEnvoy["envoy"]
+
+reviews["reviews\n(v1 | v2 | v3)"]
+reviewsEnvoy["envoy"]
+
+ratings["ratings"]
+ratingsEnvoy["envoy"]
+
+class sleep,sleepEnvoy,product,productEnvoy,details,detailsEnvoy,reviews,reviewsEnvoy,ratings,ratingsEnvoy bookinfo;
+
+sleep --> sleepEnvoy --> productEnvoy --> product
+productEnvoy --> detailsEnvoy --> details
+productEnvoy --> reviewsEnvoy --> reviews
+reviewsEnvoy --> ratingsEnvoy --> ratings
+end
+
+%% ================= ISTIO SYSTEM =================
+subgraph ISTIO["istio-system namespace"]
+direction TB
+classDef istio fill:#ede9fe,stroke:#7c3aed,stroke-width:2px;
+
+istiod["istiod"]
+otel["otel-collector"]
+prom["prometheus"]
+graf["grafana"]
+kiali["kiali"]
+
+class istiod,otel,prom,graf,kiali istio;
+end
+
+%% ================= TRACING =================
+subgraph TRACING["tracing-system namespace"]
+direction TB
+classDef tracing fill:#dcfce7,stroke:#16a34a,stroke-width:2px;
+
+tempo["tempo"]
+minio["minio"]
+
+class tempo,minio tracing;
+end
+
+%% ================= FLOWS =================
+
+%% xDS
+istiod -.-> sleepEnvoy
+istiod -.-> productEnvoy
+istiod -.-> detailsEnvoy
+istiod -.-> reviewsEnvoy
+istiod -.-> ratingsEnvoy
+
+%% OTLP
+sleepEnvoy --> otel
+productEnvoy --> otel
+detailsEnvoy --> otel
+reviewsEnvoy --> otel
+ratingsEnvoy --> otel
+
+otel --> tempo
+tempo --> minio
+tempo --> prom
+prom --> graf
+prom --> kiali
+

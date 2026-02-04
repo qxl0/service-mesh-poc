@@ -1,0 +1,90 @@
+%%{init: {"theme":"base","flowchart":{"curve":"basis"},"themeVariables":{
+  "fontFamily":"Inter, ui-sans-serif, system-ui",
+  "primaryColor":"#e0f2fe",
+  "primaryTextColor":"#0f172a",
+  "primaryBorderColor":"#0284c7",
+  "lineColor":"#334155",
+  "tertiaryColor":"#f8fafc"
+}}}%%
+
+flowchart LR
+
+%% ===== TITLE NODE =====
+TITLE["ISTIO SERVICE MESH + OPENTELEMETRY + TEMPO<br/>OBSERVABILITY ARCHITECTURE"]
+classDef title fill:#ffffff,stroke:#ffffff,color:#0f172a,font-size:26px,font-weight:bold;
+class TITLE title;
+
+%% ================= BOOKINFO =================
+subgraph BOOKINFO["bookinfo (data plane)"]
+direction LR
+classDef bookinfo fill:#dbeafe,stroke:#2563eb,stroke-width:2px;
+
+sleep["sleep"]
+sEnvoy["envoy"]
+
+product["productpage"]
+pEnvoy["envoy"]
+
+details["details"]
+dEnvoy["envoy"]
+
+reviews["reviews (v1|v2|v3)"]
+rEnvoy["envoy"]
+
+ratings["ratings"]
+raEnvoy["envoy"]
+
+class sleep,sEnvoy,product,pEnvoy,details,dEnvoy,reviews,rEnvoy,ratings,raEnvoy bookinfo;
+
+sleep --> sEnvoy --> pEnvoy --> product
+pEnvoy --> dEnvoy --> details
+pEnvoy --> rEnvoy --> reviews
+rEnvoy --> raEnvoy --> ratings
+end
+
+%% ================= ISTIO / OBSERVABILITY =================
+subgraph ISTIO["istio-system"]
+direction TB
+classDef istio fill:#ede9fe,stroke:#7c3aed,stroke-width:2px;
+
+istiod["istiod"]
+otel["otel-collector"]
+prom["prometheus"]
+graf["grafana"]
+kiali["kiali"]
+
+class istiod,otel,prom,graf,kiali istio;
+end
+
+%% ================= TRACING =================
+subgraph TRACING["tracing-system"]
+direction TB
+classDef tracing fill:#dcfce7,stroke:#16a34a,stroke-width:2px;
+
+tempo["tempo"]
+minio["minio"]
+
+class tempo,minio tracing;
+end
+
+%% ================= FLOWS =================
+TITLE --> sleep
+
+istiod -.-> sEnvoy
+istiod -.-> pEnvoy
+istiod -.-> dEnvoy
+istiod -.-> rEnvoy
+istiod -.-> raEnvoy
+
+sEnvoy --> otel
+pEnvoy --> otel
+dEnvoy --> otel
+rEnvoy --> otel
+raEnvoy --> otel
+
+otel --> tempo
+tempo --> minio
+tempo --> prom
+prom --> graf
+prom --> kiali
+

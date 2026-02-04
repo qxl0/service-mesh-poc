@@ -1,0 +1,92 @@
+%%{init: {"theme":"base","flowchart":{"curve":"basis","nodeSpacing":18,"rankSpacing":26},"themeVariables":{
+  "fontFamily":"Inter, ui-sans-serif, system-ui",
+  "primaryColor":"#e0f2fe",
+  "primaryTextColor":"#0f172a",
+  "primaryBorderColor":"#0284c7",
+  "lineColor":"#334155",
+  "tertiaryColor":"#f8fafc"
+}}}%%
+
+flowchart LR
+
+%% ========= TITLE (top center) =========
+T["<b>Istio Service Mesh 3 Tracing PoC</b><br/>Bookinfo → Envoy → OTEL Collector → Tempo → Prometheus → Grafana/Kiali"]
+classDef title fill:#fff7ed,stroke:#fb923c,stroke-width:2px,color:#0f172a;
+class T title;
+
+%% ========= LEGEND =========
+subgraph LEGEND["Legend"]
+direction LR
+classDef legend fill:#f8fafc,stroke:#94a3b8,stroke-width:1px,color:#0f172a;
+L1["Solid line = Data/Telemetry flow"]:::legend
+L2["Dashed line = Control-plane (xDS)"]:::legend
+end
+
+%% ================= BOOKINFO =================
+subgraph BOOKINFO["bookinfo namespace (data plane)"]
+direction LR
+classDef bookinfo fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#0f172a;
+
+sleep["sleep<br/>svc 10.217.5.111:80"]:::bookinfo
+sleepEnvoy["envoy (sidecar)<br/>telemetry export"]:::bookinfo
+
+product["productpage<br/>svc 10.217.4.168:9080"]:::bookinfo
+productEnvoy["envoy (sidecar)"]:::bookinfo
+
+details["details<br/>svc 10.217.4.241:9080"]:::bookinfo
+detailsEnvoy["envoy (sidecar)"]:::bookinfo
+
+reviews["reviews<br/>(v1 | v2 | v3)<br/>svc 10.217.5.185:9080"]:::bookinfo
+reviewsEnvoy["envoy (sidecar)"]:::bookinfo
+
+ratings["ratings<br/>svc 10.217.5.37:9080"]:::bookinfo
+ratingsEnvoy["envoy (sidecar)"]:::bookinfo
+
+sleep --> sleepEnvoy --> productEnvoy --> product
+productEnvoy --> detailsEnvoy --> details
+productEnvoy --> reviewsEnvoy --> reviews
+reviewsEnvoy --> ratingsEnvoy --> ratings
+end
+
+%% ================= ISTIO SYSTEM =================
+subgraph ISTIO["istio-system namespace (control plane + telemetry)"]
+direction TB
+classDef istio fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#0f172a;
+
+istiod["istiod<br/>svc 10.217.5.24<br/>15010/15012/443/15014"]:::istio
+otel["otel-collector<br/>svc 10.217.5.112:4317/4318<br/>pod 10.217.1.149"]:::istio
+prom["prometheus<br/>svc 10.217.4.193:9090"]:::istio
+graf["grafana<br/>svc 10.217.4.219:3000"]:::istio
+kiali["kiali<br/>svc 10.217.5.82<br/>20001/9090"]:::istio
+end
+
+%% ================= TRACING =================
+subgraph TRACING["tracing-system namespace (Tempo + object store)"]
+direction TB
+classDef tracing fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#0f172a;
+
+tempo["tempo-tempo<br/>svc 10.217.4.121<br/>3200/4317/4318"]:::tracing
+minio["minio<br/>svc 10.217.4.226<br/>9000/9001"]:::tracing
+end
+
+%% ================= FLOWS =================
+
+%% xDS (dashed)
+istiod -. xDS 15012 .-> sleepEnvoy
+istiod -. xDS 15012 .-> productEnvoy
+istiod -. xDS 15012 .-> detailsEnvoy
+istiod -. xDS 15012 .-> reviewsEnvoy
+istiod -. xDS 15012 .-> ratingsEnvoy
+
+%% OTLP spans (solid)
+sleepEnvoy -->|OTLP 4317/4318| otel
+productEnvoy -->|OTLP 4317/4318| otel
+detailsEnvoy -->|OTLP 4317/4318| otel
+reviewsEnvoy -->|OTLP 4317/4318| otel
+ratingsEnvoy -->|OTLP 4317/4318| otel
+
+otel -->|OTLP 4317/4318| tempo
+tempo -->|S3 9000| minio
+tempo -->|metrics-generator remote_write| prom
+prom --> graf
+prom --> kiali

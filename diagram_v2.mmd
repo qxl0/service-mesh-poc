@@ -1,0 +1,82 @@
+%%{init: {"theme":"base","flowchart":{"curve":"basis"},"themeVariables":{
+  "fontFamily":"Inter, ui-sans-serif, system-ui",
+  "primaryColor":"#e0f2fe",
+  "primaryTextColor":"#0f172a",
+  "primaryBorderColor":"#0284c7",
+  "lineColor":"#334155",
+  "tertiaryColor":"#f8fafc"
+}}}%%
+
+flowchart LR
+
+%% ====== BOOKINFO ======
+subgraph NS_BOOKINFO["bookinfo namespace (data plane)"]
+direction LR
+classDef bookinfo fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#0f172a;
+
+sleep["sleep svc\n10.217.5.111:80"]
+sleepEnvoy["sleep envoy"]
+
+product["productpage svc\n10.217.4.168:9080"]
+productEnvoy["productpage envoy"]
+
+details["details svc\n10.217.4.241:9080"]
+detailsEnvoy["details envoy"]
+
+reviews["reviews svc (v1/v2/v3)\n10.217.5.185:9080"]
+reviewsEnvoy["reviews envoy"]
+
+ratings["ratings svc\n10.217.5.37:9080"]
+ratingsEnvoy["ratings envoy"]
+
+class sleep,sleepEnvoy,product,productEnvoy,details,detailsEnvoy,reviews,reviewsEnvoy,ratings,ratingsEnvoy bookinfo;
+
+sleep --> sleepEnvoy --> productEnvoy --> product
+productEnvoy --> detailsEnvoy --> details
+productEnvoy --> reviewsEnvoy --> reviews
+reviewsEnvoy --> ratingsEnvoy --> ratings
+end
+
+%% ====== ISTIO SYSTEM ======
+subgraph NS_ISTIO["istio-system namespace"]
+direction TB
+classDef istio fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#1e1b4b;
+
+istiod["istiod\n10.217.5.24"]
+otelSvc["otel-collector\n10.217.5.112"]
+prom["prometheus\n10.217.4.193"]
+graf["grafana\n10.217.4.219"]
+kiali["kiali\n10.217.5.82"]
+
+class istiod,otelSvc,prom,graf,kiali istio;
+end
+
+%% ====== TRACING ======
+subgraph NS_TRACING["tracing-system namespace"]
+direction TB
+classDef tracing fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#052e16;
+
+tempo["tempo\n10.217.4.121"]
+minio["minio\n10.217.4.226"]
+
+class tempo,minio tracing;
+end
+
+%% ====== FLOWS ======
+istiod -.-> sleepEnvoy
+istiod -.-> productEnvoy
+istiod -.-> detailsEnvoy
+istiod -.-> reviewsEnvoy
+istiod -.-> ratingsEnvoy
+
+sleepEnvoy --> otelSvc
+productEnvoy --> otelSvc
+detailsEnvoy --> otelSvc
+reviewsEnvoy --> otelSvc
+ratingsEnvoy --> otelSvc
+
+otelSvc --> tempo
+tempo --> minio
+tempo --> prom
+prom --> graf
+prom --> kiali

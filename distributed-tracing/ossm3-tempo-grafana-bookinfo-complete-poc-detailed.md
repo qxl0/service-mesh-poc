@@ -790,3 +790,77 @@ KIALI_SVC --> PROM_SVC
 KIALI_SVC --> ISTIOD_SVC
 ```
 
+```mermaid
+%%{init: {"theme":"dark","flowchart":{"curve":"basis"},"themeVariables":{
+  "fontFamily":"Inter, ui-sans-serif, system-ui",
+  "primaryColor":"#1f2937",
+  "primaryTextColor":"#e5e7eb",
+  "primaryBorderColor":"#374151",
+  "lineColor":"#9ca3af",
+  "tertiaryColor":"#111827"
+}}}%%
+
+flowchart LR
+
+subgraph NS_BOOKINFO["bookinfo namespace (data plane)"]
+direction LR
+
+sleep["sleep svc\n10.217.5.111:80"]
+sleepEnvoy["sleep envoy (istio-proxy)"]
+
+product["productpage svc\n10.217.4.168:9080"]
+productEnvoy["productpage envoy (istio-proxy)"]
+
+details["details svc\n10.217.4.241:9080"]
+detailsEnvoy["details envoy (istio-proxy)"]
+
+reviews["reviews svc (v1/v2/v3 behind)\n10.217.5.185:9080"]
+reviewsEnvoy["reviews envoy (istio-proxy)"]
+
+ratings["ratings svc\n10.217.5.37:9080"]
+ratingsEnvoy["ratings envoy (istio-proxy)"]
+
+sleep --> sleepEnvoy --> productEnvoy --> product
+productEnvoy --> detailsEnvoy --> details
+productEnvoy --> reviewsEnvoy --> reviews
+reviewsEnvoy --> ratingsEnvoy --> ratings
+end
+
+subgraph NS_ISTIO["istio-system namespace (control plane + telemetry)"]
+direction TB
+
+istiod["istiod svc\n10.217.5.24\n15010/15012/443/15014"]
+otelSvc["otel-collector svc\n10.217.5.112\n4317/4318"]
+prom["prometheus svc\n10.217.4.193:9090"]
+graf["grafana svc\n10.217.4.219:3000"]
+kiali["kiali svc\n10.217.5.82\n20001/9090"]
+end
+
+subgraph NS_TRACING["tracing-system namespace (Tempo + storage)"]
+direction TB
+
+tempo["tempo-tempo svc\n10.217.4.121\n3200/4317/4318"]
+minio["minio svc\n10.217.4.226\n9000/9001"]
+end
+
+%% xDS config
+istiod -. xDS_15012 .-> sleepEnvoy
+istiod -. xDS_15012 .-> productEnvoy
+istiod -. xDS_15012 .-> detailsEnvoy
+istiod -. xDS_15012 .-> reviewsEnvoy
+istiod -. xDS_15012 .-> ratingsEnvoy
+
+%% OTLP spans: sidecars -> otel-collector -> tempo
+sleepEnvoy -->|OTLP 4317/4318| otelSvc
+productEnvoy -->|OTLP 4317/4318| otelSvc
+detailsEnvoy -->|OTLP 4317/4318| otelSvc
+reviewsEnvoy -->|OTLP 4317/4318| otelSvc
+ratingsEnvoy -->|OTLP 4317/4318| otelSvc
+
+otelSvc -->|OTLP 4317| tempo
+
+%% Metrics to Prometheus, view in Grafana/Kiali
+tempo -->|remote_write| prom
+prom --> graf
+prom --> kiali
+```
