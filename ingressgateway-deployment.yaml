@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"name":"ingressgateway","namespace":"istio-gateway"},"spec":{"replicas":1,"selector":{"matchLabels":{"istio":"ingressgateway"}},"template":{"metadata":{"annotations":{"inject.istio.io/templates":"gateway"},"labels":{"istio":"ingressgateway","sidecar.istio.io/inject":"true"}},"spec":{"containers":[{"image":"auto","name":"istio-proxy","ports":[{"containerPort":15090,"name":"http-envoy-prom","protocol":"TCP"}],"resources":{"limits":{"cpu":"2000m","memory":"1024Mi"},"requests":{"cpu":"100m","memory":"128Mi"}},"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true,"runAsNonRoot":true}}],"securityContext":{"sysctls":[{"name":"net.ipv4.ip_unprivileged_port_start","value":"0"}]},"serviceAccountName":"secret-reader"}}}}
+  creationTimestamp: "2026-01-25T19:45:04Z"
+  generation: 1
+  name: ingressgateway
+  namespace: istio-gateway
+  resourceVersion: "85388"
+  uid: 1b3a274b-dce8-42a3-b949-80df21ea73b9
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        inject.istio.io/templates: gateway
+      creationTimestamp: null
+      labels:
+        istio: ingressgateway
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+      - image: auto
+        imagePullPolicy: Always
+        name: istio-proxy
+        ports:
+        - containerPort: 15090
+          name: http-envoy-prom
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "2"
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        sysctls:
+        - name: net.ipv4.ip_unprivileged_port_start
+          value: "0"
+      serviceAccount: secret-reader
+      serviceAccountName: secret-reader
+      terminationGracePeriodSeconds: 30
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2026-01-25T19:45:07Z"
+    lastUpdateTime: "2026-01-25T19:45:07Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2026-01-25T19:45:04Z"
+    lastUpdateTime: "2026-01-25T19:45:07Z"
+    message: ReplicaSet "ingressgateway-645c78744f" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
